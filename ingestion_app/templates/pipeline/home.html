@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Upload{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Hero Header -->
+        <div class="text-center mb-4 reveal">
+            <h1 class="fw-bold mb-2" style="font-size: 2.2rem;">
+                <span class="gradient-text">Analyseur Multimodal IA</span>
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 500px; margin: 0 auto;">
+                Uploadez un fichier et posez des questions. L'IA analyse automatiquement documents, images et données.
+            </p>
+        </div>
+
+        <!-- Pipeline Steps -->
+        <div class="pipeline-steps reveal reveal-delay-1">
+            <div class="pipeline-step">
+                <div class="pipeline-step-icon"><i class="bi bi-cloud-upload"></i></div>
+            </div>
+            <div class="pipeline-step-connector"></div>
+            <div class="pipeline-step">
+                <div class="pipeline-step-icon"><i class="bi bi-file-earmark-text"></i></div>
+            </div>
+            <div class="pipeline-step-connector"></div>
+            <div class="pipeline-step">
+                <div class="pipeline-step-icon"><i class="bi bi-tags"></i></div>
+            </div>
+            <div class="pipeline-step-connector"></div>
+            <div class="pipeline-step">
+                <div class="pipeline-step-icon"><i class="bi bi-signpost-split"></i></div>
+            </div>
+            <div class="pipeline-step-connector"></div>
+            <div class="pipeline-step">
+                <div class="pipeline-step-icon"><i class="bi bi-cpu"></i></div>
+            </div>
+            <div class="pipeline-step-connector"></div>
+            <div class="pipeline-step">
+                <div class="pipeline-step-icon"><i class="bi bi-chat-square-text"></i></div>
+            </div>
+        </div>
+
+        <!-- Upload Card -->
+        <div class="upload-zone mb-4 reveal reveal-delay-2" id="drop-zone">
+            <form method="post" enctype="multipart/form-data" id="upload-form">
+                {% csrf_token %}
+                <div class="upload-icon mb-3">
+                    <i class="bi bi-file-earmark-arrow-up"></i>
+                </div>
+                <h4 class="mb-2" style="font-weight: 700;">Glissez-déposez un fichier ici</h4>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">ou cliquez pour sélectionner</p>
+
+                {{ form.file }}
+
+                {% if form.file.errors %}
+                <div class="mt-2" style="color: var(--accent-red);">
+                    {% for error in form.file.errors %}
+                    <p class="mb-0"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- File preview area -->
+                <div id="file-preview" class="mt-3" style="display: none;">
+                    <div class="glass-card-static p-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-file-earmark fs-3 me-3" id="preview-icon" style="color: var(--primary);"></i>
+                            <div class="text-start">
+                                <strong id="preview-name" style="color: var(--text-primary);"></strong>
+                                <br><small id="preview-size" style="color: var(--text-muted);"></small>
+                            </div>
+                        </div>
+                        <img id="image-preview" class="file-preview-img mt-3" style="display: none;">
+                        <pre id="text-preview" class="mt-3 p-2 rounded small" style="display: none; max-height: 200px; overflow: auto; background: var(--bg-code); color: var(--text-primary);"></pre>
+                    </div>
+                </div>
+
+                <button type="submit" class="glow-btn mt-4 px-5 py-2" id="submit-btn">
+                    <span class="spinner-border spinner-border-sm spinner-processing me-2" role="status"></span>
+                    <i class="bi bi-send"></i> <span>Analyser le fichier</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Supported formats -->
+        <div class="glass-card-static p-4 mb-4 reveal reveal-delay-3">
+            <h5 class="mb-3" style="font-weight: 700;">
+                <i class="bi bi-info-circle" style="color: var(--primary);"></i> Types de fichiers supportés
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="glass-card p-3 text-center h-100">
+                        <span class="badge-modern badge-document mb-2">
+                            <i class="bi bi-file-text"></i> Document
+                        </span>
+                        <br><small style="color: var(--text-muted);">PDF, DOCX, TXT</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-3 text-center h-100">
+                        <span class="badge-modern badge-image mb-2">
+                            <i class="bi bi-image"></i> Image
+                        </span>
+                        <br><small style="color: var(--text-muted);">JPG, PNG, GIF, BMP, WebP</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-3 text-center h-100">
+                        <span class="badge-modern badge-structured mb-2">
+                            <i class="bi bi-table"></i> Données
+                        </span>
+                        <br><small style="color: var(--text-muted);">CSV, JSON, XLSX</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent files -->
+        {% if recent_files %}
+        <div class="glass-card-static p-4 reveal reveal-delay-4">
+            <h5 class="mb-3" style="font-weight: 700;">
+                <i class="bi bi-clock-history" style="color: var(--primary);"></i> Fichiers récents
+            </h5>
+            <div class="d-flex flex-column gap-1">
+                {% for file in recent_files %}
+                <a href="{% url 'question' file.pk %}" class="list-item-modern">
+                    <div class="d-flex align-items-center gap-2">
+                        {% if file.modality == 'document' %}
+                        <i class="bi bi-file-text" style="color: var(--color-document);"></i>
+                        {% elif file.modality == 'image' %}
+                        <i class="bi bi-image" style="color: var(--color-image);"></i>
+                        {% elif file.modality == 'structured' %}
+                        <i class="bi bi-table" style="color: var(--color-structured);"></i>
+                        {% else %}
+                        <i class="bi bi-file-earmark" style="color: var(--color-unknown);"></i>
+                        {% endif %}
+                        <span style="font-weight: 500;">{{ file.original_filename }}</span>
+                        <span class="badge-modern badge-{{ file.modality }}">
+                            {{ file.get_modality_display }}
+                        </span>
+                    </div>
+                    <small style="color: var(--text-muted);">{{ file.uploaded_at|timesince }} ago</small>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize drag & drop
+    const fileInput = document.getElementById('file-input');
+    const preview = document.getElementById('file-preview');
+    const previewName = document.getElementById('preview-name');
+    const previewSize = document.getElementById('preview-size');
+    const previewIcon = document.getElementById('preview-icon');
+    const imagePreview = document.getElementById('image-preview');
+    const textPreview = document.getElementById('text-preview');
+    const form = document.getElementById('upload-form');
+    const submitBtn = document.getElementById('submit-btn');
+
+    initDragDrop('drop-zone', 'file-input', {
+        onFile: showPreview
+    });
+
+    function showPreview(file) {
+        preview.style.display = 'block';
+        previewName.textContent = file.name;
+        previewSize.textContent = formatFileSize(file.size);
+        imagePreview.style.display = 'none';
+        textPreview.style.display = 'none';
+
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (['pdf'].includes(ext)) {
+            previewIcon.className = 'bi bi-file-pdf fs-3 me-3';
+            previewIcon.style.color = 'var(--accent-red)';
+        } else if (['docx', 'doc'].includes(ext)) {
+            previewIcon.className = 'bi bi-file-word fs-3 me-3';
+            previewIcon.style.color = 'var(--color-document)';
+        } else if (['csv', 'xlsx', 'xls'].includes(ext)) {
+            previewIcon.className = 'bi bi-file-spreadsheet fs-3 me-3';
+            previewIcon.style.color = 'var(--accent-green)';
+        } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) {
+            previewIcon.className = 'bi bi-file-image fs-3 me-3';
+            previewIcon.style.color = 'var(--color-image)';
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else if (['json'].includes(ext)) {
+            previewIcon.className = 'bi bi-file-code fs-3 me-3';
+            previewIcon.style.color = 'var(--accent-orange)';
+        } else if (['txt'].includes(ext)) {
+            previewIcon.className = 'bi bi-file-text fs-3 me-3';
+            previewIcon.style.color = 'var(--text-secondary)';
+        }
+
+        if (['txt', 'csv', 'json'].includes(ext) && file.size < 50000) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                textPreview.textContent = e.target.result.substring(0, 1000);
+                textPreview.style.display = 'block';
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    // Loading state
+    form.addEventListener('submit', () => {
+        submitBtn.classList.add('disabled');
+        form.classList.add('processing');
+    });
+</script>
+{% endblock %}
