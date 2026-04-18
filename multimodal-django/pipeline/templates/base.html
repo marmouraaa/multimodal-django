@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Multimodal AI{% endblock %} | Pipeline IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column">
+
+    <!-- Glass Navbar -->
+    <nav class="navbar navbar-expand-lg glass-navbar sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="bi bi-cpu"></i>
+                <span class="gradient-text">Multimodal AI</span>
+            </a>
+            <div class="d-flex align-items-center gap-2 order-lg-last">
+                <button class="theme-toggle" id="theme-toggle" title="Changer le thème">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <i class="bi bi-list" style="font-size: 1.4rem; color: var(--text-primary);"></i>
+                </button>
+            </div>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto me-3">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="bi bi-cloud-upload"></i> Upload
+                        </a>
+                    </li>
+                   
+                    
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert-modern d-flex align-items-center justify-content-between mb-2">
+            <span>
+                {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill text-success me-2"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="bi bi-exclamation-circle-fill text-danger me-2"></i>
+                {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                {% else %}<i class="bi bi-info-circle-fill me-2" style="color: var(--primary)"></i>
+                {% endif %}
+                {{ message }}
+            </span>
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" onclick="this.parentElement.remove()"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Content -->
+    <main class="container my-4 flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Wave Separator -->
+    <div class="wave-separator">
+        <svg viewBox="0 0 1200 40" preserveAspectRatio="none">
+            <path d="M0,20 C150,35 350,0 600,20 C850,40 1050,5 1200,20 L1200,40 L0,40 Z"></path>
+        </svg>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-modern">
+        <div class="container">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2 mb-2 mb-md-0">
+                    <i class="bi bi-cpu" style="color: var(--primary);"></i>
+                    <span style="font-weight: 600; color: var(--text-primary);">Multimodal AI Pipeline</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <small>Projet Django &copy; 2026</small>
+                    <span style="color: var(--border-glass);">|</span>
+                    <small></small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

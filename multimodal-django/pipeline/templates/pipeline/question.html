@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Question - {{ uploaded.original_filename }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- File info sidebar -->
+    <div class="col-lg-4 mb-4">
+        <div class="glass-card-static p-4 reveal">
+            <h5 class="mb-3" style="font-weight: 700;">
+                <i class="bi bi-file-earmark-check" style="color: var(--primary);"></i> Fichier uploadé
+            </h5>
+
+            <!-- File preview for images -->
+            {% if uploaded.modality == 'image' %}
+            <div class="mb-3">
+                <img src="{{ uploaded.file.url }}" class="file-preview-img w-100" alt="{{ uploaded.original_filename }}">
+            </div>
+            {% endif %}
+
+            <table class="table table-sm table-modern mb-0">
+                <tr>
+                    <td class="label">Nom</td>
+                    <td><strong>{{ uploaded.original_filename }}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Type</td>
+                    <td>
+                        <span class="badge-modern badge-{{ uploaded.modality }}">
+                            {% if uploaded.modality == 'document' %}
+                            <i class="bi bi-file-text"></i>
+                            {% elif uploaded.modality == 'image' %}
+                            <i class="bi bi-image"></i>
+                            {% elif uploaded.modality == 'structured' %}
+                            <i class="bi bi-table"></i>
+                            {% endif %}
+                            {{ uploaded.get_modality_display }}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Taille</td>
+                    <td>{{ uploaded.file_size|filesizeformat }}</td>
+                </tr>
+                <tr>
+                    <td class="label">MIME</td>
+                    <td><code>{{ uploaded.mime_type }}</code></td>
+                </tr>
+                <tr>
+                    <td class="label">Uploadé</td>
+                    <td>{{ uploaded.uploaded_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+            </table>
+
+            <!-- Extracted content preview -->
+            {% if uploaded.extracted_content and uploaded.modality != 'image' %}
+            <details class="mt-3">
+                <summary>Contenu extrait (aperçu)</summary>
+                <pre class="mt-2 p-2 rounded small" style="max-height: 200px; overflow: auto; white-space: pre-wrap;">{{ uploaded.extracted_content|truncatechars:1000 }}</pre>
+            </details>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Question & Answer -->
+    <div class="col-lg-8">
+        <!-- Question form -->
+        <div class="glass-card-static p-4 mb-4 reveal reveal-delay-1">
+            <h4 class="mb-3" style="font-weight: 700;">
+                <i class="bi bi-chat-dots" style="color: var(--primary);"></i> Posez votre question
+            </h4>
+            <form method="post" id="question-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.question }}
+                </div>
+                {% if form.question.errors %}
+                <div class="mb-2" style="color: var(--accent-red);">
+                    {% for error in form.question.errors %}
+                    <small><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Quick question suggestions -->
+                <div class="mb-3 d-flex flex-wrap gap-2">
+                    <small style="color: var(--text-muted); width: 100%;">Suggestions :</small>
+                    {% if uploaded.modality == 'document' %}
+                    <button type="button" class="chip suggestion-btn">Résume ce document</button>
+                    <button type="button" class="chip suggestion-btn">Quels sont les points clés ?</button>
+                    <button type="button" class="chip suggestion-btn">Quel est le sujet principal ?</button>
+                    {% elif uploaded.modality == 'image' %}
+                    <button type="button" class="chip suggestion-btn">Que vois-tu sur cette image ?</button>
+                    <button type="button" class="chip suggestion-btn">Décris cette image en détail</button>
+                    <button type="button" class="chip suggestion-btn">Y a-t-il du texte sur cette image ?</button>
+                    {% elif uploaded.modality == 'structured' %}
+                    <button type="button" class="chip suggestion-btn">Combien de lignes contient le fichier ?</button>
+                    <button type="button" class="chip suggestion-btn">Quelles sont les statistiques principales ?</button>
+                    <button type="button" class="chip suggestion-btn">Quel est le total ?</button>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="glow-btn px-4" id="ask-btn">
+                    <span class="spinner-border spinner-border-sm spinner-processing me-1" role="status"></span>
+                    <i class="bi bi-send"></i> <span>Poser la question</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Current result -->
+        {% if result %}
+        <div class="glass-card-static p-4 mb-4 reveal reveal-delay-2">
+            <h5 class="mb-3" style="font-weight: 700;">
+                <i class="bi bi-robot" style="color: var(--primary);"></i> Réponse de l'IA
+            </h5>
+
+            <!-- Confidence Ring -->
+            <div class="d-flex align-items-center gap-4 mb-3">
+                <div class="confidence-ring-container" style="width: 90px; height: 90px;">
+                    <svg class="confidence-ring" viewBox="0 0 120 120" style="width: 90px; height: 90px;">
+                        <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+                        <circle class="ring-fill {% if result.confidence_percent >= 80 %}high{% elif result.confidence_percent >= 40 %}medium{% else %}low{% endif %}"
+                                cx="60" cy="60" r="52"
+                                data-percent="{{ result.confidence_percent }}"></circle>
+                    </svg>
+                    <div class="confidence-ring-label">
+                        <div class="percent counter-animate" data-target="{{ result.confidence_percent }}" data-suffix="%">0%</div>
+                        <div class="label">Confiance</div>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="answer-box-modern {% if result.confidence_percent >= 80 %}confidence-high{% elif result.confidence_percent >= 40 %}confidence-medium{% else %}confidence-low{% endif %}">
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ result.answer }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fallback warning -->
+            {% if result.is_fallback %}
+            <div class="fallback-alert-modern mt-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Fallback déclenché :</strong> {{ result.fallback_reason }}
+                <br><small>Essayez de reformuler votre question pour une meilleure réponse.</small>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                <span class="badge-modern" style="background: var(--bg-code); color: var(--primary);">
+                    <i class="bi bi-cpu"></i> {{ result.model_used }}
+                </span>
+                <span class="badge-modern" style="background: var(--bg-code); color: var(--primary);">
+                    <i class="bi bi-clock"></i> {{ result.processing_time|floatformat:2 }}s
+                </span>
+                {% if result.is_fallback %}
+                <span class="badge-modern" style="background: rgba(245, 158, 11, 0.12); color: var(--accent-orange);">
+                    <i class="bi bi-exclamation-triangle"></i> Fallback
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Previous queries -->
+        {% if previous_queries %}
+        <div class="glass-card-static p-4 reveal reveal-delay-3">
+            <h5 class="mb-3" style="font-weight: 700;">
+                <i class="bi bi-clock-history" style="color: var(--primary);"></i> Questions précédentes
+            </h5>
+            <div class="d-flex flex-column gap-1">
+                {% for q in previous_queries %}
+                <a href="{% url 'result' q.pk %}" class="list-item-modern">
+                    <div class="flex-grow-1">
+                        <strong style="font-size: 0.9rem;">Q: {{ q.question|truncatechars:80 }}</strong>
+                        <p class="mb-0 small mt-1" style="color: var(--text-muted);">{{ q.answer|truncatechars:120 }}</p>
+                    </div>
+                    <div class="text-end ms-3" style="white-space: nowrap;">
+                        <span class="badge-confidence {% if q.confidence_percent >= 80 %}high{% elif q.confidence_percent >= 40 %}medium{% else %}low{% endif %}">{{ q.confidence_percent }}%</span>
+                        <br><small style="color: var(--text-muted);">{{ q.created_at|timesince }}</small>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Quick suggestion buttons
+    document.querySelectorAll('.suggestion-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('question-input').value = btn.textContent.trim();
+        });
+    });
+
+    // Loading state
+    const form = document.getElementById('question-form');
+    const askBtn = document.getElementById('ask-btn');
+    form.addEventListener('submit', () => {
+        askBtn.classList.add('disabled');
+        form.classList.add('processing');
+    });
+</script>
+{% endblock %}

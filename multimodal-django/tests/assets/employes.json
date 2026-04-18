@@ -1,0 +1,7 @@
+[
+  {"id": 1, "nom": "Martin", "prenom": "Sophie", "poste": "Développeur Senior", "salaire": 52000, "anciennete": 5},
+  {"id": 2, "nom": "Dupont", "prenom": "Lucas", "poste": "Chef de Projet", "salaire": 61000, "anciennete": 8},
+  {"id": 3, "nom": "Bernard", "prenom": "Emma", "poste": "Designer UX", "salaire": 45000, "anciennete": 3},
+  {"id": 4, "nom": "Petit", "prenom": "Thomas", "poste": "DevOps Engineer", "salaire": 58000, "anciennete": 6},
+  {"id": 5, "nom": "Robert", "prenom": "Julie", "poste": "Data Scientist", "salaire": 65000, "anciennete": 4}
+]

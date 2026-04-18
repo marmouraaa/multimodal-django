@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Résultat - {{ query.question|truncatechars:30 }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Breadcrumb -->
+        <nav class="mb-4 reveal">
+            <ul class="breadcrumb-modern">
+                <li><a href="{% url 'home' %}"><i class="bi bi-house"></i> Accueil</a></li>
+                <li><i class="bi bi-chevron-right separator"></i></li>
+                <li><a href="{% url 'question' uploaded.pk %}">{{ uploaded.original_filename|truncatechars:30 }}</a></li>
+                <li><i class="bi bi-chevron-right separator"></i></li>
+                <li class="active">Résultat</li>
+            </ul>
+        </nav>
+
+        <!-- File info -->
+        <div class="glass-card-static p-4 mb-4 reveal reveal-delay-1">
+            <div class="d-flex align-items-center">
+                {% if uploaded.modality == 'document' %}
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="bi bi-file-text fs-4" style="color: var(--color-document);"></i>
+                </div>
+                {% elif uploaded.modality == 'image' %}
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.1); display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="bi bi-image fs-4" style="color: var(--color-image);"></i>
+                </div>
+                {% elif uploaded.modality == 'structured' %}
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="bi bi-table fs-4" style="color: var(--color-structured);"></i>
+                </div>
+                {% endif %}
+                <div>
+                    <h5 class="mb-0" style="font-weight: 700;">{{ uploaded.original_filename }}</h5>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="badge-modern badge-{{ uploaded.modality }}">{{ uploaded.get_modality_display }}</span>
+                        <small style="color: var(--text-muted);">{{ uploaded.file_size|filesizeformat }}</small>
+                    </div>
+                </div>
+            </div>
+
+            {% if uploaded.modality == 'image' %}
+            <img src="{{ uploaded.file.url }}" class="file-preview-img mt-3 w-100" alt="{{ uploaded.original_filename }}">
+            {% endif %}
+        </div>
+
+        <!-- Question (chat bubble) -->
+        <div class="mb-4 reveal reveal-delay-2">
+            <small style="color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+                <i class="bi bi-person-circle"></i> Votre question
+            </small>
+            <div class="chat-bubble">
+                <p class="mb-0">{{ query.question }}</p>
+            </div>
+        </div>
+
+        <!-- Answer -->
+        <div class="glass-card-static p-4 mb-4 reveal reveal-delay-3">
+            <div class="d-flex align-items-start gap-3 mb-3">
+                <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--accent-cyan)); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="bi bi-robot text-white"></i>
+                </div>
+                <h5 class="mb-0 pt-1" style="font-weight: 700;">Réponse de l'IA</h5>
+            </div>
+
+            <!-- Confidence Ring + Answer -->
+            <div class="d-flex flex-column flex-md-row align-items-center gap-4 mb-3">
+                <div class="confidence-ring-container">
+                    <svg class="confidence-ring" viewBox="0 0 120 120">
+                        <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+                        <circle class="ring-fill {% if query.confidence_percent >= 80 %}high{% elif query.confidence_percent >= 40 %}medium{% else %}low{% endif %}"
+                                cx="60" cy="60" r="52"
+                                data-percent="{{ query.confidence_percent }}"></circle>
+                    </svg>
+                    <div class="confidence-ring-label">
+                        <div class="percent counter-animate" data-target="{{ query.confidence_percent }}" data-suffix="%">0%</div>
+                        <div class="label">
+                            {% if query.confidence_level == 'high' %}Fiable
+                            {% elif query.confidence_level == 'medium' %}Moyen
+                            {% else %}Faible{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="answer-box-modern {% if query.confidence_percent >= 80 %}confidence-high{% elif query.confidence_percent >= 40 %}confidence-medium{% else %}confidence-low{% endif %}">
+                        <p style="white-space: pre-wrap; font-size: 1.05rem; line-height: 1.7;" class="mb-0">{{ query.answer }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if query.is_fallback %}
+            <div class="fallback-alert-modern mt-3">
+                <h6 class="mb-1"><i class="bi bi-exclamation-triangle"></i> Fallback activé</h6>
+                <p class="mb-0">{{ query.fallback_reason }}</p>
+                <small>La réponse peut être moins précise. Essayez de reformuler votre question.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Metadata Stats -->
+        <div class="row g-3 mb-4 reveal reveal-delay-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-cpu"></i></div>
+                    <div class="stat-label">Modèle utilisé</div>
+                    <div class="stat-value">{{ query.model_used }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-stopwatch"></i></div>
+                    <div class="stat-label">Temps de traitement</div>
+                    <div class="stat-value">
+                        <span class="counter-animate" data-target="{{ query.processing_time|floatformat:2 }}" data-suffix="s">0s</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="bi bi-calendar3"></i></div>
+                    <div class="stat-label">Date</div>
+                    <div class="stat-value">{{ query.created_at|date:"d/m/Y H:i" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-3 reveal">
+            <a href="{% url 'question' uploaded.pk %}" class="glow-btn">
+                <i class="bi bi-chat-dots"></i> <span>Poser une autre question</span>
+            </a>
+            <a href="{% url 'home' %}" class="glow-btn-outline">
+                <i class="bi bi-cloud-upload"></i> Uploader un autre fichier
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
